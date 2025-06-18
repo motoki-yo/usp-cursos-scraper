@@ -33,8 +33,6 @@ Este projeto coleta dados dos cursos de graduação da USP a partir do sistema J
     python main.py
     
 
-⚠️ *O programa utiliza o modo headless, então o Chrome não será exibido visualmente.*
-
 
 ## 📌 Objetivo
 
