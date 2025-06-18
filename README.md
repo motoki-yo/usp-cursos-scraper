@@ -12,26 +12,26 @@ Este projeto coleta dados dos cursos de graduação da USP a partir do sistema J
 ## 🚀 Como executar
 
 ### 1. **Clonar o repositório**
-    ```bash
+    
     git clone https://github.com/seu-usuario/usp-cursos-scraper.git
     cd usp-cursos-scraper
-    ```
+    
 
 ### 2. **Criar ambiente virtual (opcional, mas recomendado)**
-    ```bash
+
     python3 -m venv venv
     source venv/bin/activate
-    ```
+    
 
 ### 3. **Instalar as dependências**
-    ```bash
+   
     pip install -r requirements.txt
-    ```
+    
 
 ### 4. **Executar o programa**
-    ```bash
+    
     python main.py
-    ```
+    
 
 ⚠️ *O programa utiliza o modo headless, então o Chrome não será exibido visualmente.*
 
