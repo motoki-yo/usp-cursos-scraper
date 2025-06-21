@@ -64,8 +64,13 @@ class Menu:
     def _listar_cursos_unidade(self) -> None:
         """Lista os cursos de uma unidade específica."""
         nome = input("Nome da unidade: ")
-        cursos = self.consulta_service.listar_cursos_por_unidade(nome)
-        
+        dados = self.consulta_service.listar_cursos_por_unidade(nome)
+
+        if not dados:
+            print("\nUnidade não encontrada. Tente o nome completo ou a sigla (ex: EACH)")
+            return
+
+        _, cursos = dados
         if cursos:
             print(f"\nCursos da unidade {nome}:")
             for curso in cursos:

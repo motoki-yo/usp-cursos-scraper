@@ -21,7 +21,7 @@ class JupiterScraper(WebScraper):
     """
 
     BASE_URL = "https://uspdigital.usp.br/jupiterweb/jupCarreira.jsp?codmnu=8275"
-    WAIT_TIME = 30
+    WAIT_TIME = 0.1
 
     def __init__(self, headless: bool = True):
         """
@@ -60,9 +60,10 @@ class JupiterScraper(WebScraper):
         try:
             self.driver.get(self.BASE_URL)
             self.wait.until(
-                EC.presence_of_element_located((By.ID, "comboUnidade"))
+                EC.element_to_be_clickable((By.ID, "comboUnidade"))
             )
-            time.sleep(0.5)  # Pequena pausa para garantir carregamento completo
+            seletor = Select(self.driver.find_element(By.ID, "comboUnidade"))
+            self.wait.until(lambda _: len(seletor.options) > 1)
         except TimeoutException as e:
             raise WebDriverException(f"Erro ao acessar página inicial: {e}")
 
@@ -78,7 +79,6 @@ class JupiterScraper(WebScraper):
         """
         try:
             seletor = Select(self.driver.find_element(By.ID, "comboUnidade"))
-            self.wait.until(lambda _: len(seletor.options) > 1)
             return [
                 (option.get_attribute("value"), option.text.strip())
                 for option in seletor.options
@@ -100,7 +100,9 @@ class JupiterScraper(WebScraper):
         try:
             seletor = Select(self.driver.find_element(By.ID, "comboUnidade"))
             seletor.select_by_value(codigo)
-            time.sleep(0.5)  # Aguarda atualização da lista de cursos
+
+            seletor_cursos = Select(self.driver.find_element(By.ID, "comboCurso"))
+            self.wait.until(lambda _: len(seletor_cursos.options) > 1)
         except Exception as e:
             raise WebDriverException(f"Erro ao selecionar unidade: {e}")
 
@@ -116,7 +118,6 @@ class JupiterScraper(WebScraper):
         """
         try:
             seletor = Select(self.driver.find_element(By.ID, "comboCurso"))
-            self.wait.until(lambda _: len(seletor.options) > 1)
             return [
                 (option.get_attribute("value"), option.text.strip())
                 for option in seletor.options
@@ -141,17 +142,9 @@ class JupiterScraper(WebScraper):
             
             # Verifica se existe popup de erro
             try:
-                # Procura por elementos comuns em mensagens de erro
-                # Ajuste os seletores conforme necessário baseado no HTML real do popup
-                popup = self.driver.find_element(By.CLASS_NAME, "ui-dialog")
-                if popup.is_displayed():
-                    # Se encontrou o popup, tenta fechar
-                    try:
-                        fechar_btn = popup.find_element(By.CLASS_NAME, "ui-dialog-titlebar-close")
-                        fechar_btn.click()
-                    except:
-                        pass  # Se não conseguir fechar, ignora
-                    return None
+                popup = self.driver.find_element(By.ID, "err")
+                print(f"Erro ao acessar grade do curso: {codigo_curso}")
+                return None
             except NoSuchElementException:
                 pass  # Se não encontrou popup, continua normalmente
             
@@ -169,7 +162,6 @@ class JupiterScraper(WebScraper):
             codigo_curso: Código do curso
         """
         seletor = Select(self.driver.find_element(By.ID, "comboCurso"))
-        time.sleep(0.5)  # Pequena pausa para garantir que o elemento está pronto
         seletor.select_by_value(codigo_curso)
 
     def clicar_buscar(self) -> None:
@@ -178,23 +170,17 @@ class JupiterScraper(WebScraper):
             botao = self.wait.until(EC.element_to_be_clickable((By.ID, "enviar")))
             botao.click()
             
-            # Espera um pouco para ver se aparece popup
-            time.sleep(0.5)
-            
             # Verifica se há popup de erro
             try:
-                popup = self.driver.find_element(By.CLASS_NAME, "ui-dialog")
-                if popup.is_displayed():
-                    return False
-            except NoSuchElementException:
+                popup = self.wait.until(EC.presence_of_element_located((By.ID, "err")))
+                return
+            except TimeoutException:
                 pass
             
             # Se não houver popup, espera pelo link da grade
             self.wait.until(
-                EC.presence_of_element_located((By.LINK_TEXT, "Grade curricular"))
+                EC.element_to_be_clickable((By.LINK_TEXT, "Grade curricular"))
             )
-            time.sleep(0.5)
-            return True
             
         except Exception as e:
             print(f"Erro ao clicar em buscar: {e}")
@@ -213,9 +199,8 @@ class JupiterScraper(WebScraper):
             
             # Espera pela presença do elemento da grade
             self.wait.until(
-                EC.presence_of_element_located((By.ID, "gradeCurricular"))
+                lambda driver: len(driver.find_elements(By.CSS_SELECTOR, "#gradeCurricular table")) > 0
             )
-            time.sleep(0.5)
             
             return self.driver.page_source
         except Exception as e:
