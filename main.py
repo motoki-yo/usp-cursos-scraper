@@ -1,17 +1,7 @@
-"""
-Sistema de Coleta e Consulta de Dados do Jupiter Web.
-
-Este script é o ponto de entrada do sistema que coleta e permite consultar
-dados dos cursos da USP através do sistema Jupiter Web.
-
-Authors:
-    Guilherme Panza
-    Melissa Motoki
-"""
-
 import sys
 import argparse
 from typing import List
+from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn
 from src.services.coleta_service import ColetaService
 from src.services.consulta_service import ConsultaService
 from src.scrapers.jupiter_scraper import JupiterScraper
@@ -52,52 +42,54 @@ def coletar_dados(quantidade: int, headless: bool = True) -> List[Unidade]:
     Returns:
         Lista de unidades coletadas com seus cursos
     """
-    print(f"Iniciando coleta de dados para {quantidade} unidades...")
-    
+    print("\n🚀 Iniciando coleta de dados...\n")
     try:
-        with JupiterScraper(headless=headless) as scraper:
-            parser = JupiterParser()
-            coleta_service = ColetaService(scraper, parser)
-            unidades = coleta_service.coletar_dados(quantidade)
-            
-        print(f"Coleta finalizada. {len(unidades)} unidades coletadas.")
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[bold blue]{task.description}"),
+            BarColumn(),
+            transient=True,
+        ) as progress:
+            task = progress.add_task("Coletando unidades do Jupiter Web", total=quantidade)
+
+            with JupiterScraper(headless=headless) as scraper:
+                parser = JupiterParser()
+                coleta_service = ColetaService(scraper, parser)
+                unidades = coleta_service.coletar_dados(quantidade, progress=progress, task_id=task)
+
+        print(f"✅ Coleta finalizada: {len(unidades)} unidades coletadas.\n")
         return unidades
-        
+
     except Exception as e:
-        print(f"Erro durante a coleta: {e}")
+        print(f"❌ Erro durante a coleta: {e}")
         raise
 
 def main() -> None:
     """Função principal do programa."""
     try:
-        # Processamento dos argumentos
         args = parse_argumentos()
-        
+
         if args.quantidade_unidades < 1:
             print("Quantidade de unidades deve ser maior que zero")
             sys.exit(1)
-            
-        # Coleta de dados
+
         unidades = coletar_dados(args.quantidade_unidades, args.headless)
-        
+
         if not unidades:
             print("Nenhuma unidade foi coletada")
             sys.exit(1)
-            
-        # Inicialização do sistema de consultas
-        print("Iniciando sistema de consultas...")
+
+        print("🧠 Iniciando sistema de consultas...\n")
         consulta_service = ConsultaService(unidades)
         menu = Menu(consulta_service)
-        
-        # Execução do menu interativo
-        print("Iniciando menu interativo")
+
         menu.executar()
-        
+
     except KeyboardInterrupt:
-        print("\nPrograma interrompido pelo usuário")
+        print("\n⛔ Programa interrompido pelo usuário")
         sys.exit(0)
     except Exception as e:
-        print(f"Erro fatal: {e}")
+        print(f"❌ Erro fatal: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":

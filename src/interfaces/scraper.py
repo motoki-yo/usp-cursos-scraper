@@ -1,4 +1,3 @@
-# src/interfaces/scraper.py
 from abc import ABC, abstractmethod
 from typing import List, Tuple
 
@@ -11,12 +10,25 @@ class WebScraper(ABC):
         pass
 
     @abstractmethod
-    def obter_unidades(self) -> List[Tuple[str, str]]:
+    def listar_unidades_urls(self) -> List[str]:
         """
-        Obtém a lista de unidades disponíveis.
-        
+        Obtém a lista de URLs das unidades disponíveis para coleta.
+
         Returns:
-            Lista de tuplas (código, nome) das unidades.
+            Lista de URLs para cada unidade.
+        """
+        pass
+
+    @abstractmethod
+    def obter_html(self, url: str) -> str:
+        """
+        Obtém o HTML bruto da página dada a URL.
+
+        Args:
+            url: URL da página a ser obtida.
+
+        Returns:
+            Conteúdo HTML da página.
         """
         pass
 

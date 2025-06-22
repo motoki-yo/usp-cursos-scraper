@@ -59,9 +59,7 @@ class JupiterScraper(WebScraper):
         """
         try:
             self.driver.get(self.BASE_URL)
-            self.wait.until(
-                EC.element_to_be_clickable((By.ID, "comboUnidade"))
-            )
+            self.wait.until(EC.element_to_be_clickable((By.ID, "comboUnidade")))
             seletor = Select(self.driver.find_element(By.ID, "comboUnidade"))
             self.wait.until(lambda _: len(seletor.options) > 1)
         except TimeoutException as e:
@@ -125,7 +123,7 @@ class JupiterScraper(WebScraper):
             ]
         except Exception as e:
             raise WebDriverException(f"Erro ao obter cursos: {e}")
-        
+
     def acessar_grade_curso(self, codigo_curso: str) -> str:
         """
         Acessa a grade curricular de um curso.
@@ -165,7 +163,9 @@ class JupiterScraper(WebScraper):
         seletor.select_by_value(codigo_curso)
 
     def clicar_buscar(self) -> None:
-        """Clica no botão de buscar e aguarda carregamento."""
+        """
+        Clica no botão de buscar e aguarda carregamento.
+        """
         try:
             botao = self.wait.until(EC.element_to_be_clickable((By.ID, "enviar")))
             botao.click()
@@ -207,14 +207,48 @@ class JupiterScraper(WebScraper):
             raise WebDriverException(f"Erro ao acessar aba grade curricular: {e}")
     
     def fechar(self) -> None:
-        """Fecha o navegador e libera recursos."""
+        """
+        Fecha o navegador e libera recursos.
+        """
         if self.driver:
             self.driver.quit()
 
     def __enter__(self):
-        """Permite uso do scraper com context manager."""
+        """
+        Permite uso do scraper com context manager.
+        """
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """Garante que o driver será fechado ao sair do context manager."""
+        """
+        Garante que o driver será fechado ao sair do context manager.
+        """
         self.fechar()
+
+    # Métodos implementados para satisfazer a interface WebScraper
+
+    def listar_unidades_urls(self) -> List[str]:
+        """
+        Retorna uma lista de códigos das unidades que serão usadas para navegar.
+        
+        Como o sistema Jupiter não possui URLs únicas para cada unidade,
+        utilizamos o código da unidade como identificador para seleção via Selenium.
+        """
+        self.acessar_pagina_inicial()
+        unidades = self.obter_unidades()
+        return [codigo for codigo, nome in unidades]
+
+    def obter_html(self, codigo_unidade: str) -> str:
+        """
+        Seleciona a unidade pelo código e retorna o HTML da página atual.
+        
+        Args:
+            codigo_unidade: Código da unidade a ser selecionada.
+            
+        Returns:
+            HTML da página após seleção da unidade.
+        """
+        self.acessar_pagina_inicial()
+        self.selecionar_unidade(codigo_unidade)
+        time.sleep(0.2)  # Pequena espera para garantir o carregamento da página
+        return self.driver.page_source

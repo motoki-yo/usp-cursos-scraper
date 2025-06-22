@@ -48,7 +48,6 @@ class ConsultaService:
             Sigla da unidade (ex: "EACH")
         """
         try:
-            # Procura o texto entre parênteses e remove espaços
             inicio = nome.rfind('(')
             fim = nome.rfind(')')
             if inicio != -1 and fim != -1:
@@ -83,6 +82,18 @@ class ConsultaService:
         """
         return [unidade.nome for unidade in self.unidades]
 
+    def listar_todos_cursos(self) -> List[str]:
+        """
+        Lista todos os nomes de cursos disponíveis.
+        """
+        return sorted([curso.nome for curso in self._index_cursos.values()])
+
+    def listar_codigos_disciplinas(self) -> List[str]:
+        """
+        Lista todos os códigos de disciplinas disponíveis.
+        """
+        return sorted(self._index_disciplinas.keys())
+
     def buscar_unidade(self, termo: str) -> Optional[Unidade]:
         """
         Busca uma unidade pelo nome completo ou sigla.
@@ -94,14 +105,11 @@ class ConsultaService:
             Unidade encontrada ou None
         """
         termo = termo.strip()
-        # Tenta buscar por nome completo
         unidade = self._index_unidades.get(termo.lower())
         if unidade:
             return unidade
-            
-        # Se não encontrou, tenta buscar por sigla
         return self._index_siglas.get(termo.upper())
-    
+
     def listar_cursos_por_unidade(self, termo: str) -> Optional[tuple]:
         """
         Obtém os cursos de uma unidade específica.
@@ -153,7 +161,7 @@ class ConsultaService:
             for codigo, ocorrencias in self._index_disciplinas.items()
             if len(ocorrencias) > 1
         }
-    
+
     def analisar_carga_curso(self, nome_curso: str) -> Optional[dict]:
         """
         Analisa a distribuição de carga horária de um curso.
@@ -183,7 +191,7 @@ class ConsultaService:
         """
         curso1 = self.buscar_curso(nome_curso1)
         curso2 = self.buscar_curso(nome_curso2)
-        
+
         if not curso1 or not curso2:
             return None
 
@@ -192,13 +200,13 @@ class ConsultaService:
             'total_disciplinas': len(curso1.todas_disciplinas),
             'total_ch': sum(d.carga_horaria for d in curso1.todas_disciplinas)
         }
-        
+
         dados_curso2 = {
             'nome': curso2.nome,
             'total_disciplinas': len(curso2.todas_disciplinas),
             'total_ch': sum(d.carga_horaria for d in curso2.todas_disciplinas)
         }
-        
+
         return dados_curso1, dados_curso2
 
     def listar_disciplinas_por_creditos(self, min_creditos: int) -> List[tuple]:
@@ -230,19 +238,19 @@ class ConsultaService:
         cursos_info = []
         total_disciplinas = 0
         total_ch = 0
-        
+
         for curso in unidade.cursos:
             disc_curso = len(curso.todas_disciplinas)
             ch_curso = sum(d.carga_horaria for d in curso.todas_disciplinas)
             total_disciplinas += disc_curso
             total_ch += ch_curso
-            
+
             cursos_info.append({
                 'nome': curso.nome,
                 'disciplinas': disc_curso,
                 'carga_horaria': ch_curso
             })
-        
+
         return {
             'nome': unidade.nome,
             'total_cursos': len(unidade.cursos),

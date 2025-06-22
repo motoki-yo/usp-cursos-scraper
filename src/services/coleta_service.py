@@ -20,56 +20,88 @@ class ColetaService:
         self.scraper = scraper
         self.parser = parser
 
-    def coletar_dados(self, quantidade_unidades: int) -> List[Unidade]:
+    def coletar_dados(
+        self,
+        quantidade: int,
+        progress: Optional["Progress"] = None,
+        task_id: Optional[int] = None
+    ) -> List[Unidade]:
         """
-        Coleta dados das unidades e seus cursos.
-        
+        Coleta dados do Jupiter Web para um número especificado de unidades.
+
         Args:
-            quantidade_unidades: Número de unidades a serem coletadas
-            
+            quantidade: Número de unidades a coletar.
+            progress: Objeto de progresso do Rich (opcional).
+            task_id: ID da tarefa de progresso (opcional).
+
         Returns:
-            Lista de unidades com seus respectivos cursos
+            Lista de objetos Unidade com cursos e disciplinas preenchidos.
         """
-        try:
-            self.scraper.acessar_pagina_inicial()
-            unidades_disponiveis = self.scraper.obter_unidades()
-            unidades_coletadas = []
+        # Obtem os códigos das unidades (não URLs)
+        codigos_unidades = self.scraper.listar_unidades_urls()[:quantidade]
+        unidades: List[Unidade] = []
 
-            for i, (codigo, nome_unidade) in enumerate(unidades_disponiveis):
-                if i >= quantidade_unidades:
-                    break
-                    
-                print(f"Coletando unidade {nome_unidade} ({i+1}/{quantidade_unidades})")
-                unidade = self._coletar_unidade(codigo, nome_unidade)
-                if unidade.cursos:  # Só adiciona se tiver cursos
-                    unidades_coletadas.append(unidade)
+        for codigo_unidade in codigos_unidades:
+            # Para cada unidade, coleta os dados detalhados (com cursos)
+            try:
+                # Aqui coletamos a unidade com seus cursos
+                unidade = self._coletar_unidade_por_codigo(codigo_unidade, progress, task_id)
+                unidades.append(unidade)
+            except Exception as e:
+                print(f"Erro ao coletar unidade {codigo_unidade}: {e}")
+                continue
 
-            return unidades_coletadas
-        finally:
-            self.scraper.fechar()
+            # Atualiza progresso por unidade coletada
+            if progress and task_id is not None:
+                progress.update(task_id, advance=1)
 
-    def _coletar_unidade(self, codigo: str, nome: str) -> Unidade:
+        return unidades
+
+    def _coletar_unidade_por_codigo(
+        self,
+        codigo: str,
+        progress: Optional["Progress"] = None,
+        task_id: Optional[int] = None
+    ) -> Unidade:
         """
-        Coleta dados de uma unidade específica.
+        Coleta dados de uma unidade específica dado seu código.
         
         Args:
             codigo: Código da unidade
-            nome: Nome da unidade
+            progress: Objeto de progresso (opcional)
+            task_id: ID da tarefa de progresso (opcional)
             
         Returns:
-            Objeto Unidade com seus cursos
+            Objeto Unidade com seus cursos coletados
         """
+        # Acessa a página inicial e seleciona a unidade pelo código
+        self.scraper.acessar_pagina_inicial()
         self.scraper.selecionar_unidade(codigo)
-        cursos = self._coletar_cursos(nome, codigo)
+        
+        # Obtem o nome da unidade (por exemplo, via lista de unidades)
+        lista_unidades = self.scraper.obter_unidades()
+        nome = next((nome for cod, nome in lista_unidades if cod == codigo), "Unidade Desconhecida")
+        
+        # Coleta os cursos da unidade
+        cursos = self._coletar_cursos(nome, codigo, progress, task_id)
+        
         return Unidade(nome=nome, cursos=cursos)
     
-    def _coletar_cursos(self, nome_unidade: str, codigo_unidade: str) -> List[Curso]:
+    def _coletar_cursos(
+        self,
+        nome_unidade: str,
+        codigo_unidade: str,
+        progress: Optional["Progress"] = None,
+        task_id: Optional[int] = None
+    ) -> List[Curso]:
         """
         Coleta dados dos cursos de uma unidade.
         
         Args:
             nome_unidade: Nome da unidade
             codigo_unidade: Código da unidade
+            progress: Objeto de progresso (opcional)
+            task_id: ID da tarefa de progresso (opcional)
         """
         cursos = []
         cursos_lista = self.scraper.obter_cursos()
@@ -80,7 +112,11 @@ class ColetaService:
                 curso = self._coletar_curso(codigo_curso, nome_curso, nome_unidade)
                 if curso:
                     cursos.append(curso)
+
+                if progress and task_id is not None:
+                    progress.update(task_id, advance=1)
                 
+                # Após coletar o curso, retorna para a página da unidade para continuar
                 self.scraper.acessar_pagina_inicial()
                 self.scraper.selecionar_unidade(codigo_unidade)
                 
