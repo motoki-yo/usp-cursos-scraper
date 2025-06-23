@@ -1,5 +1,8 @@
 # USP Cursos Scraper
 
+### Alunos: 
+    Guilherme Sousa Panza
+    Melissa Motoki Nogueira
 Este projeto coleta dados dos cursos de graduação da USP a partir do sistema JúpiterWeb, usando Selenium WebDriver para automação da navegação e extração das informações de grade curricular. Também conta com interface interativa no terminal usando Rich e Questionary.
 
 ## 🔧 Tecnologias usadas
@@ -34,9 +37,8 @@ Este projeto coleta dados dos cursos de graduação da USP a partir do sistema J
     
     python main.py NUMERO_DE_UNIDADES [--headless]
 
-``NUMERO_DE_UNIDADES``: quantidade de unidades USP a serem coletadas (e.g. ``python main.py 3`` -> coleta dados de três unidades)
-
-``--headless`` (opcional): executa o navegador em modo headless (sem interface gráfica)
+NUMERO_DE_UNIDADES: quantidade de unidades USP a serem coletadas (e.g. python main.py 3 - coleta dados de três unidades)
+--headless (opcional): executa o navegador em modo headless (sem interface gráfica)
     
 
 ## 📌 Objetivo
